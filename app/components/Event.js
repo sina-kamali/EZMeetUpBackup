@@ -1,18 +1,58 @@
 import React, {Component} from 'react';
 import {AppRegistry,Platform, StyleSheet, Text, View, ImageBackground, BackHandler, Image,TouchableOpacity, Button, TextInput, ScrollView,CheckBox,} from 'react-native';
 import {createStackNavigator} from 'react-navigation'
+import Slideshow from 'react-native-slideshow';
+import PropTypes from 'prop-types';
 
 export default class Event extends Component {
 
-  constructor(){
-    super();
-    this.state ={
-      check:false
-    }
-	//placeholder to fetch slides from event object
-    this.slidePictures = ['http://placeimg.com/640/480/any'];
-	this.slideInformation = 
-	'Cineplex Inc. is a Canadian entertainment company headquartered in Toronto, Ontario. Through its operating subsidiary Cineplex Entertainment LP, Cineplex operates 162 theatres across Canada.';
+  // constructor(){
+  //   super();
+  //   this.state ={
+  //     check:false
+  //   }
+	// //placeholder to fetch slides from event object
+  //   this.slidePictures = ['http://placeimg.com/640/480/any'];
+	// this.slideInformation = 
+	// 'Cineplex Inc. is a Canadian entertainment company headquartered in Toronto, Ontario. Through its operating subsidiary Cineplex Entertainment LP, Cineplex operates 162 theatres across Canada.';
+  // }
+
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      position: 1,
+      interval: null,
+      dataSource: [
+        {
+          title: 'Title 1',
+          caption: 'Caption 1',
+          url: 'http://placeimg.com/640/480/any',
+        }, {
+          title: 'Title 2',
+          caption: 'Caption 2',
+          url: 'http://placeimg.com/640/400/any',
+        }, {
+          title: 'Title 3',
+          caption: 'Caption 3',
+          url: 'http://placeimg.com/640/470/any',
+        },
+      ],
+    };
+  }
+
+  componentWillMount() {
+    this.setState({
+      interval: setInterval(() => {
+        this.setState({
+          position: this.state.position === this.state.dataSource.length ? 0 : this.state.position + 1
+        });
+      }, 2000)
+    });
+  }
+
+  componentWillUnmount() {
+    clearInterval(this.state.interval);
   }
 
   static navigationOptions = ({navigation, screenProps}) => ({
@@ -69,7 +109,13 @@ export default class Event extends Component {
         <ImageBackground source={require('../images/background.png')} style={{width: '100%', height: '100%'}}>
           <ScrollView>
             <View style={styles.container}>
-			<Text>
+
+ <Slideshow 
+        dataSource={this.state.dataSource}
+        position={this.state.position}
+        onPositionChanged={position => this.setState({ position })} />
+
+			{/* <Text>
 				{this.slideInformation}
 			</Text>
 			<TouchableOpacity style={{marginTop:20}}
@@ -90,6 +136,10 @@ export default class Event extends Component {
                     Swipe Left
                     </Text>
             </TouchableOpacity>
+            
+ */}
+
+            
             </View>
           </ScrollView>
         </ImageBackground>
