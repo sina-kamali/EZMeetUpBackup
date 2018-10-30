@@ -98,7 +98,10 @@ export default class SignUp extends Component {
       if(this.state.fname == ''){
         result =  true;
       } 
-      if(this.state.fname.length <2){
+      if(this.state.fname.length < 2){
+        result =  true;
+      }
+      if(this.state.fname.length > 20){
         result =  true;
       }
       if(format.test(this.state.fname)){
@@ -108,13 +111,16 @@ export default class SignUp extends Component {
       return result;
   }
   LnameValidation(){
-    var format = /[ !@#$%^&*()+\=\[\]{};':"\\|,.<>\/?]/;
+    var format = /[ !@#$%^&*()+\=\[\]{};:"\\|,.<>\/?]/;
 
     var result = false;
     if(this.state.lname == ''){
       result =  true;
     }
-    if(this.state.lname.length <2){
+    if(this.state.lname.length < 2 ){
+      result =  true;
+    }
+    if(this.state.lname.length > 20 ){
       result =  true;
     }
     if(format.test(this.state.lname)){
@@ -130,6 +136,9 @@ PValidation(){
   
   var result = false;
   if(this.state.password.length < 8){
+    result =  true;
+  }
+  if(this.state.password.length > 30){
     result =  true;
   }
   if(!format.test(this.state.password)){
@@ -189,14 +198,18 @@ Register(){
       
       return false;
     }
+
+
 }
+
 
 SubmitInfo() {
   if(this.Register()){
+    
     this.onFetchRegister();
 
   } else {
-    Alert.alert("Registration Failed!", "Something went wrong please contact EZMeetUp support.\n Sorry for the invoice! ");
+    Alert.alert("Registration Failed!", "Something went wrong please contact EZMeetUp support.\nSorry for the inconvenience! ");
   }
 };
 
@@ -239,13 +252,14 @@ async onFetchRegister() {
       index: 0,
       actions: [NavigationActions.navigate({ routeName: 'Login', params: {email: this.state.email}})]
     });
+    
     this.props.navigation.dispatch(resetAction);
    }
    else{
-    Alert.alert("Registration Failed!", "Something went wrong please contact EZMeetUp support.\n Sorry for the invoice! ");
+    Alert.alert("Registration Failed!", "Something went wrong please contact EZMeetUp support.\nSorry for the inconvenience! ");
    }
  } catch (errors) {
-  Alert.alert("Registration Failed!", "Something went wrong please contact EZMeetUp support.\n Sorry for the invoice! ");
+  Alert.alert("Registration Failed!", "Something went wrong please contact EZMeetUp support.\nSorry for the inconvenience! ");
   } 
 }
 
@@ -289,7 +303,7 @@ async onFetchRegister() {
                   visible={FnameError}
                   unmountOnHide={true}
                 >
-                  <Text style={{color: 'white',width: 330, fontSize: 18, fontWeight: 'bold'}}>name</Text>
+                  <Text style={{color: 'white',width: 330, fontSize: 18, fontWeight: 'bold'}}>Name must be between 2 and 20 characters, and can contain only (- and _)</Text>
                 </AnimatedHideView>
                 <TextInput
                   style={{borderWidth: 2,
@@ -306,7 +320,7 @@ async onFetchRegister() {
                   visible={LnameError}
                   unmountOnHide={true}
                 >
-                <Text style={{color: 'white',width: 330, fontSize: 18, fontWeight: 'bold'}}>last name</Text>
+                <Text style={{color: 'white',width: 330, fontSize: 18, fontWeight: 'bold'}}>last name must be between 2 and 20 characters, and can contain only (- and _)</Text>
                 </AnimatedHideView>
                 <TextInput
                   style={{borderWidth: 2,
