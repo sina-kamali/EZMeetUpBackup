@@ -1,228 +1,167 @@
 import React, { Component } from 'react';
-import { AppRegistry, Platform, StyleSheet, Text, View, ImageBackground, BackHandler,
-   Image, TouchableOpacity, Button, TextInput, ScrollView, CheckBox, ActivityIndicator} from 'react-native';
+import {
+  AppRegistry, Platform, StyleSheet, Text, View, ImageBackground, BackHandler,
+  Image, TouchableOpacity, Button, TextInput, ScrollView, CheckBox, ActivityIndicator,Alert
+} from 'react-native';
 import { createStackNavigator } from 'react-navigation'
-import Slideshow from 'react-native-slideshow';
-import PropTypes from 'prop-types';
-import GestureRecognizer, { swipeDirections } from 'react-native-swipe-gestures';
+import CardStack, { Card } from 'react-native-card-stack-swiper';
+import { EventRegister } from 'react-native-event-listeners'
 
 export default class Event extends Component {
-  
+
 
 
   constructor(props) {
     super(props);
-
-		this.state = {
+    this.state = {
       isLoading: true,
-      userId: 0,
-      userToken: 0,
-		  eventName: "EventName",
-		  eventLocation: "EventLocation",
-		  eventDescription: "EventDescription",
-		  eventCapacity: "EventCapacity",	
-		  myText: 'I\'m ready to get swiped!',
-		  gestureName: 'none',
-		  backgroundColor: '#fff',
-		  position: 1,
-		  interval: null,
-		  dataSource: [
-			{
-			  title: 'Title 1',
-			  caption: 'Caption 1',
-			  url: 'http://placeimg.com/640/480/any',
-			}, {
-			  title: 'Title 2',
-			  caption: 'Caption 2',
-			  url: 'http://placeimg.com/640/400/any',
-			}, {
-			  title: 'Title 3',
-			  caption: 'Caption 3',
-			  url: 'http://placeimg.com/640/470/any',
-			},
-		  ],
-		};
+      list: ["A", "B", "C", "D", "E", "F", "G"],
+      token: "",
+      UserId: "",
+      EventList: [],
+      views: [],
+      infoEvent: 0,
+      mounted : false
+
+    };
 
   }
 
-  componentWillMount() {
+
+  GetEvents() {
     const { navigation } = this.props;
     const id = navigation.getParam('id');
-    const token = navigation.getParam('token');
+    const tk = navigation.getParam('token');
+    this.state.UserId = id;
+    this.state.token = tk;
+    global.id = navigation.getParam('id');
+    global.token = navigation.getParam('token');
+    this.setState({ EventList: [],
+      views: []
+     });
 
-
-    this.setState({
-      interval: setInterval(() => {
-        this.setState({
-          position: this.state.position === this.state.dataSource.length ? 0 : this.state.position + 1
-        });
-      }, 2000)
-    });
-
-    fetch('http://myvmlab.senecacollege.ca:6282/api/users/'+ id)
+    fetch('http://myvmlab.senecacollege.ca:6282/api/events/withCategoriesOfUser/' + id,
+      {
+        headers: {
+          'authtoken': tk
+        }
+      })
       .then((response) => response.json())
       .then((responseJson) => {
-
         this.setState({
-          isLoading: false,
-          userId: id,
-          userToken: token,
-          dataSource: responseJson.user_categories
-        }, function(){
-          console.log(responseJson);
+          EventList: responseJson
+        }, function () {
+
+          let eve = responseJson;
+
+          for (let i = 0; i < eve.length; i++) {
+            const words = eve[i].eventDate.split('T');
+            if (i % 2 == 0) {
+
+              this.state.views.push(
+                <Card key={i} style={[styles.card,{backgroundColor:"white"}]} onSwipedLeft={() => this.infoEevent(i)} onSwipedRight={()=> this.AcceptEvent(i)}>
+                  <View style={{
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  backgroundColor:"#F5F5F5",
+                  padding: 5}}>
+                  <Image
+                    source={{ uri: eve[i].event_images[0].image }}
+                    style={{alignSelf: 'center',
+                    height: 300,
+                    width: 300,}}
+                    resizeMode="contain"
+                  />
+                </View>
+                <View style={{backgroundColor:"white", width:310, borderBottomLeftRadius:5, borderBottomRightRadius:5, padding: 5}}>
+                  <Text style={[styles.label,{paddingLeft: 5}]}>Location: {eve[i].eventLocation}</Text>
+                  <Text style={[styles.label,{paddingLeft: 5}]}>Event Date: {words[0]}</Text>
+                </View>
+                  
+                </Card>
+              );
+            }
+            else {
+              this.state.views.push(
+                <Card key={i} style={[styles.card,{backgroundColor:"white"}]} onSwipedLeft={() => this.infoEevent(i)} onSwipedRight={()=> this.AcceptEvent(i)} >
+                <View style={{
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  backgroundColor:"#F5F5F5",
+                  padding:5}}>
+                  <Image
+                    source={{ uri: eve[i].event_images[0].image }}
+                    style={{alignSelf: 'center',
+                    height: 300,
+                    width: 300}}
+                    resizeMode="contain"
+                  />
+                </View>
+                <View style={{backgroundColor:"white", padding: 5, borderBottomLeftRadius:5, borderBottomRightRadius:5 }}>
+                  <Text style={[styles.label,{paddingLeft: 5}]}>Location: {eve[i].eventLocation}</Text>
+                  <Text style={[styles.label,{paddingLeft: 5}]}>Event Date: {words[0]}</Text>
+                </View>
+                </Card>
+              );
+            }
+          }
+          this.setState({ isLoading: false });
         });
-
       })
-      .catch((error) =>{
+      .catch((error) => {
         console.error(error);
+        throw error;
       });
+
   }
 
-  componentWillUnmount() {
-    clearInterval(this.state.interval);
-  }
-  
-  //load new event with swiping, will replace with DB data later
-  loadNewEvent(){
-	if (global.EventNo == global.EventMax){
-		global.EventNo = 1;
-	}
-	else{
-		global.EventNo = global.EventNo + 1;
-	}
-	if (global.EventNo == 1){
-	  this.setState({
-		  eventName: "EventName",
-		  eventLocation: "EventLocation",
-		  eventDescription: "EventDescription",
-		  eventCapacity: "EventCapacity",	
-		  myText: 'I\'m ready to get swiped!',
-		  gestureName: 'none',
-		  backgroundColor: '#fff',
-		  position: 1,
-		  interval: null,
-		  dataSource: [
-			{
-			  title: 'Title 1',
-			  caption: 'Caption 1',
-			  url: 'http://placeimg.com/640/480/any',
-			}, {
-			  title: 'Title 2',
-			  caption: 'Caption 2',
-			  url: 'http://placeimg.com/640/400/any',
-			}, {
-			  title: 'Title 3',
-			  caption: 'Caption 3',
-			  url: 'http://placeimg.com/640/470/any',
-			},
-		  ],
-	  });
-	}
-	if (global.EventNo == 2){
-	  this.setState({
-		  eventName: "Cineplex",
-		  eventLocation: "15460 Bayview Avenue Aurora, ON, L4G 7J1",
-		  eventDescription: "Movie Threater",
-		  eventCapacity: "200",	
-		  myText: 'I\'m ready to get swiped!',
-		  gestureName: 'none',
-		  backgroundColor: '#fff',
-		  position: 1,
-		  interval: null,
-		  dataSource: [
-			{
-			  title: 'Cineplex',
-			  caption: 'Movie Threater',
-			  url: 'http://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Cineplex_logo.svg/500px-Cineplex_logo.svg.png',
-			}, {
-			  title: 'Venom',
-			  caption: 'Thriller, Action',
-			  url: 'https://mediafiles.cineplex.com/Attachments/NewItems/venom-595x326-EN_20181005144852_0.jpg',
-			}, {
-			  title: 'A Star is Born',
-			  caption: 'Drama, Slice of Life',
-			  url: 'https://mediafiles.cineplex.com/Attachments/NewItems/astarisborn-595x326-EN_20181005144910_0.jpg',
-			},
-		  ],
-	  });
-	}
-	if (global.EventNo == 3){
-	  this.setState({
-		  eventName: "CNE",
-		  eventLocation: "210 Princes' Blvd, Toronto, ON M6K 3C3",
-		  eventDescription: "An annual event that takes place at Exhibition Place",
-		  eventCapacity: "50000",	
-		  myText: 'I\'m ready to get swiped!',
-		  gestureName: 'none',
-		  backgroundColor: '#fff',
-		  position: 1,
-		  interval: null,
-		  dataSource: [
-			{
-			  title: 'Sky Ride',
-			  caption: 'Adult Ride',
-			  url: 'https://theex.com/statcache/pthumb/images/galleries/skyride/skyride_1.fe2c857b.jpg',
-			}, {
-			  title: 'Ribfest',
-			  caption: 'Food',
-			  url: 'https://theex.com/statcache/pthumb/images/food/restaurants/ribfest_lg.ce9edee6.jpg',
-			}, {
-			  title: 'Craft Beer Fest',
-			  caption: 'Alcohol',
-			  url: 'https://theex.com/statcache/pthumb/images/food/craft_beer_fest_2015.ce9edee6.jpg',
-			},
-		  ],
-	  });
-	}
-  }
-  
-  onSwipeUp(gestureState) {
-	this.loadNewEvent();  
-    this.setState({ myText: 'You swiped up!'});
-	this.forceUpdate();
+  infoEevent(index){
+    this.state.infoEvent = index + 1;
   }
 
-  onSwipeDown(gestureState) {
-	this.loadNewEvent();
-    this.setState({ myText: 'You swiped down!' });
-	this.forceUpdate();
+  AcceptEvent(index){
+    this.state.infoEvent = index + 1;
   }
 
-  onSwipeLeft(gestureState) {
-	this.loadNewEvent();
-    this.setState({ myText: 'You swiped left!' });
-	this.forceUpdate();
-  }
-
-  onSwipeRight(gestureState) {
-	this.loadNewEvent();
-    this.setState({ myText: 'You swiped right!' });
-	this.forceUpdate();
-  }
-
-  onSwipe(gestureName, gestureState) {
-    const { SWIPE_UP, SWIPE_DOWN, SWIPE_LEFT, SWIPE_RIGHT } = swipeDirections;
-    this.setState({ gestureName: gestureName });
-    switch (gestureName) {
-      case SWIPE_UP:
-        this.setState({ backgroundColor: 'red' });
-        break;
-      case SWIPE_DOWN:
-        this.setState({ backgroundColor: 'green' });
-        break;
-      case SWIPE_LEFT:
-        this.setState({ backgroundColor: 'blue' });
-        break;
-      case SWIPE_RIGHT:
-        this.setState({ backgroundColor: 'yellow' });
-        break;
+  ShowInfo(){
+    if(this.state.EventList.length >  this.state.infoEvent){
+      this.props.navigation.navigate('EventDetails',{id: this.state.UserId, token: this.state.token, eventDetails: this.state.EventList[this.state.infoEvent]})
+    }else{
+      Alert.alert("", "Sorry there is no event details available to display! ");
     }
   }
 
+  componentDidMount() {
+    BackHandler.addEventListener('hardwareBackPress', this.onBackButtonPressed);
+    
+    this.listener = EventRegister.addEventListener('myCustomEvent', () => {
+      this.refreshPage();
+  })
 
 
+    this.GetEvents();
 
-  static navigationOptions = ({ navigation, screenProps }) => ({
+  }
+  componentWillUnmount() {
+    BackHandler.removeEventListener('hardwareBackPress', this.onBackButtonPressed);
+    
+  }
+
+  onBackButtonPressed() {
+    return true;
+  }
+
+  refreshPage(){
+    console.log("Clled it");
+    
+    this.state.isLoading=true;
+    this.GetEvents();
+    this.forceUpdate();
+
+  }
+
+
+  static navigationOptions = ({ navigation, screenProps, state }) => ({
     headerTitle: (
       <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'center' }}>
         <Image
@@ -250,7 +189,7 @@ export default class Event extends Component {
     ),
     headerLeft: (
       <TouchableOpacity style={{ textAlign: 'center', marginLeft: 10 }}
-        onPress={() => navigation.navigate('Preference')}>
+        onPress={() => navigation.navigate('Preference', { id: global.id, token: global.token })}>
         <Image
           source={require('../images/Settings.png')}
           style={{ width: 40, height: 40 }}
@@ -259,87 +198,65 @@ export default class Event extends Component {
     )
   });
 
-  componentDidMount() {
-    BackHandler.addEventListener('hardwareBackPress', this.onBackButtonPressed);
-  }
-
-  componentWillUnmount() {
-    BackHandler.removeEventListener('hardwareBackPress', this.onBackButtonPressed);
-  }
-
-  onBackButtonPressed() {
-    return true;
-  }
 
   render() {
 
-    if(this.state.isLoading){
-      return(
-        <View style={{flex: 1, padding: 20}}>
-          <ActivityIndicator/>
+
+    if (this.state.isLoading) {
+      return (
+        <View style={{ flex: 1, padding: 20 }}>
+          <ActivityIndicator />
         </View>
-      )
+      );
     }
 
-    const config = {
-      velocityThreshold: 0.3,
-      directionalOffsetThreshold: 80
-    };
+
+
     return (
       <ImageBackground source={require('../images/background.png')} style={{ width: '100%', height: '100%' }}>
-      
-      
-        <ScrollView>
-          <View style={[styles.container,{padding: 20}]}>
-            <GestureRecognizer
-              onSwipe={(direction, state) => this.onSwipe(direction, state)}
-              onSwipeUp={(state) => this.onSwipeUp(state)}
-              onSwipeDown={(state) => this.onSwipeDown(state)}
-              onSwipeLeft={(state) => this.onSwipeLeft(state)}
-              onSwipeRight={(state) => this.onSwipeRight(state)}
-              config={config}
-              style={{
-                flex: 1,
-                backgroundColor: this.state.backgroundColor
-              }}
-            >
-              <View style={{ backgroundColor: 'white', padding: 30, color: 'black', textAlign: 'center',}}>
-			  
-			    <Text>{this.state.eventName}</Text>
-				<Text>Location: {this.state.eventLocation}</Text>
-				<Text>Capacity: {this.state.eventCapacity}</Text>
-				
-                <Slideshow
-                  dataSource={this.state.dataSource}
-                  position={this.state.position}
-                  onPositionChanged={position => this.setState({ position })} />
 
-                
-				<Text>{this.state.eventDescription}</Text>
-				
-                <View style={{ marginTop: 30, justifyContent:'space-between', flexDirection: 'row',}}>
-                  <TouchableOpacity
-                  onPress={(state) => this.onSwipeLeft(state)}
-                  >
-                    <Image
-                      source={require('../images/no.png')}
-                    />
-                  </TouchableOpacity>
+        <View style={{flex: 1,paddingTop: 10}}>
 
-                  <TouchableOpacity
-                  onPress={(state) => this.onSwipeRight(state)}
-                  >
-                    <Image
-                      source={require('../images/yes.png')}
-                    />
-                  </TouchableOpacity>
-				  
-                </View>
-              </View>
-            </GestureRecognizer>
+
+          <CardStack
+            style={styles.content}
+
+            renderNoMoreCards={() => <Text style={{ fontWeight: '700', fontSize: 18, color: 'gray', width:200, textAlign:"center"}}>Thank you for using EZMeetUp! Hang tight while we are finding new events for you.</Text>}
+            ref={swiper => {
+              this.swiper = swiper
+            }}
+          >
+            {/* <Card style={[styles.card, styles.card1]}><Text style={styles.label}>A</Text></Card>
+            <Card style={[styles.card, styles.card2]}><Text style={styles.label}>B</Text></Card>
+            <Card style={[styles.card, styles.card1]}><Text style={styles.label}>C</Text></Card>
+            <Card style={[styles.card, styles.card2]}><Text style={styles.label}>D</Text></Card>
+            <Card style={[styles.card, styles.card1]}><Text style={styles.label}>E</Text></Card> */}
+            {this.state.views}
+
+          </CardStack>
+          <View style={styles.footer}>
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity style={[styles.button, styles.red]} onPress={() => {
+                this.swiper.swipeLeft();
+              }}>
+                <Image source={require('../images/no.png')} resizeMode={'contain'} style={{ height: 62, width: 62 }} />
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.button, styles.orange]} onPress={() => {
+               this.ShowInfo()
+              }}>
+                <Image source={require('../images/info.png')} resizeMode={'contain'} style={{ height: 32, width: 32, borderRadius: 5 }} />
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.button, styles.green]} onPress={() => {
+                this.swiper.swipeRight();
+              }}>
+                <Image source={require('../images/yes.png')} resizeMode={'contain'} style={{ height: 62, width: 62 }} />
+              </TouchableOpacity>
+            </View>
+
           </View>
-        </ScrollView>
-      
+        </View>
+
+
       </ImageBackground>
 
     );
@@ -350,28 +267,86 @@ export default class Event extends Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
+    flexDirection: 'column',
+    backgroundColor: '#f2f2f2',
+  },
+  content: {
+    flex: 5,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  logo: {
-    width: 200,
-    height: 200,
+  card: {
+    width: 320,
+    height: 400,
+    backgroundColor: '#FE474C',
+    borderRadius: 5,
+    shadowColor: 'rgba(0,0,0,0.5)',
+    shadowOffset: {
+      width: 0,
+      height: 1
+    },
+    shadowOpacity: 0.5,
   },
-  text: {
+  // card1: {
+  //   backgroundColor: '#FE474C',
+  // },
+  // card2: {
+  //   backgroundColor: '#FEB12C',
+  // },
+  label: {
+    textAlign: 'left',
+    paddingTop:5,
     fontSize: 20,
-    textAlign: 'center',
-    margin: 10,
+    fontFamily: 'System',
+    color: 'black',
+    backgroundColor: 'transparent',
   },
-  buttons: {
-    borderWidth: 2,
-    padding: 10,
-    borderColor: 'white',
-    width: 330,
-    textAlign: "center",
-    fontSize: 20,
-    color: 'white',
-    fontWeight: 'bold'
+  footer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  buttonContainer: {
+    width: 220,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  button: {
+    shadowColor: 'rgba(0,0,0,0.3)',
+    shadowOffset: {
+      width: 0,
+      height: 1
+    },
+    shadowOpacity: 0.5,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 0,
+  },
+  orange: {
+    width: 55,
+    height: 55,
+    borderWidth: 6,
+    borderColor: 'rgb(246,190,66)',
+    borderWidth: 4,
+    borderRadius: 55,
+    marginTop: -15
+  },
+  green: {
+    width: 75,
+    height: 75,
+    backgroundColor: '#fff',
+    borderRadius: 75,
+    borderWidth: 6,
+    borderColor: '#01df8a',
+  },
+  red: {
+    width: 75,
+    height: 75,
+    backgroundColor: '#fff',
+    borderRadius: 75,
+    borderWidth: 6,
+    borderColor: '#fd267d',
   }
-
 });
 AppRegistry.registerComponent(Event, () => Event);

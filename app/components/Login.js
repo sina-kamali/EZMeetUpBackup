@@ -1,8 +1,9 @@
 import React, {Component} from 'react';
 import {AppRegistry,Platform,KeyboardAvoidingView, StyleSheet, Text, View, ImageBackground,Image,TouchableOpacity,
-   Button, TextInput,Alert,TouchableHighlight} from 'react-native';
+   Button, TextInput,Alert,TouchableHighlight, NetInfo, StackActions, ActivityIndicator} from 'react-native';
    import { TextField } from 'react-native-material-textfield';
 import {createStackNavigator} from 'react-navigation'
+import Splash from '../../App';
 
 
 export default class Login extends Component {
@@ -10,9 +11,11 @@ export default class Login extends Component {
   constructor(props) {
     super(props);
     this.state = {
+      loading: false,
       email: '',
       password: '',
       LogedIn: '',
+      isOnline: false
     }
   }
   
@@ -46,6 +49,8 @@ export default class Login extends Component {
   };
 
   async onFetchLoginRecords() {
+    this.state.loading = true;
+    this.renderLoading()
     //Match the back-end whit these keys
     var data = {
       email: this.state.email,
@@ -69,18 +74,24 @@ export default class Login extends Component {
         // if successfull goes to user's Preference page or dashboard
         //this.props.navigation.navigate('Preference')
         var UserOBJ = new Object(JSON.parse(response._bodyInit));
-        console.log(response.headers);
+        // console.log(response.headers);
         
-        console.log(response.headers.map.authtoken);
-        console.log(UserOBJ.id);
+        // console.log(response.headers.map.authtoken);
+        // console.log(UserOBJ.id);
         if(UserOBJ.loginStatus){
+          this.state.loading = false;
+          this.renderLoading();
           this.props.navigation.navigate('Event',{id: UserOBJ.id, token: response.headers.map.authtoken})
         }else {
           Alert.alert("Login Failed!", "Invalid email or password! \nPlease try again. ");
         }
      }
      else{
-      Alert.alert("Login Failed!", "Invalid email or password! \nPlease try again. ");
+      if(response._bodyInit == "Please check your email to verify your account"){
+        Alert.alert(response._bodyInit);
+        } else {
+          Alert.alert("Login Failed!", "Invalid email or password! \nPlease try again. ");
+        }
      }
    } catch (errors) {
     Alert.alert("Login Failed!", "Something went wrong please contact EZMeetUp support.\nSorry for the inconvenience! ");
@@ -113,7 +124,32 @@ CanAcive() {
     return 'transparent'
   }
 }
+
+renderLoading() {
+  if (this.state.loading) {
+    return (
+      <ActivityIndicator size="large"  color="black" style={{
+          position:'absolute', left:0, right:0, bottom:0, top:0 }}/>        
+    )
+  } else {
+    return null
+  }
+}
+
   render() {
+    NetInfo.isConnected.fetch().then(isConnected => {
+      this.setState({isOnline: isConnected});
+      if(!isConnected){
+        this.props.navigation.navigate('Home');
+      }
+    });
+
+    // if(!(this.state.isOnline)){
+    // console.log(this.state.isOnline);
+    //   this.props.navigation.navigate('Home');
+    // }
+
+
     const isEnabled = this.canLogin();
     const isVisible = this.CanAcive();
     const { navigation } = this.props;

@@ -1,10 +1,56 @@
   import React, {Component} from 'react';
   import {AppRegistry,Platform, StyleSheet, Text, View, KeyboardAvoidingView, ScrollView, 
-    ImageBackground,Image,TouchableOpacity, Button, TextInput,Alert,TouchableHighlight} from 'react-native';
+    ImageBackground,Image,TouchableOpacity, Button, TextInput,Alert,TouchableHighlight,ActivityIndicator, BackHandler} from 'react-native';
   import {createStackNavigator,NavigationActions,StackActions} from 'react-navigation'
-
+  import { EventRegister } from 'react-native-event-listeners'
 
   export default class Preference extends Component {
+
+    constructor(props) {
+      super(props);
+  
+      this.state = {
+        isLoading: true,
+        userId: 0,
+        userToken: 0,
+        firstName: "",
+        lastName: ""
+      };
+  
+    }
+
+    componentWillMount() {
+      console.log("here!!!!!!!");
+      EventRegister.emit('myCustomEvent',{});
+      const { navigation } = this.props;
+      const id = navigation.getParam('id');
+      const token = navigation.getParam('token');
+      
+  
+      fetch('http://myvmlab.senecacollege.ca:6282/api/users/'+ id, 
+			{
+				headers: { 
+					'authtoken': token 
+					}
+			})
+        .then((response) => response.json())
+        .then((responseJson) => {
+  
+          this.setState({
+            isLoading: false,
+            userId: id,
+            userToken: token,
+            firstName: responseJson.firstName,
+            lastName: responseJson.lastName
+          }, function(){
+            //console.log(responseJson);
+          });
+  
+        })
+        .catch((error) =>{
+          console.error(error);
+        });
+    }
 
     static navigationOptions = {
       title: 'Preference',
@@ -26,7 +72,21 @@
       });
       this.props.navigation.dispatch(resetAction);
     }
+
+
+    componentWillUnmount() {
+      //EventRegister.emit('myCustomEvent',{});
+
+    }
     render() {
+
+      if(this.state.isLoading){
+        return(
+          <View style={{flex: 1, padding: 20}}>
+            <ActivityIndicator/>
+          </View>
+        )
+      }
 
       return (
           <ImageBackground source={require('../images/background.png')} style={{width: '100%', height: '100%'}}>
@@ -42,7 +102,7 @@
                   textAlign: 'center',
                   fontWeight:'bold',
                   color: 'black'
-                }}>Username</Text>
+                }}>{this.state.firstName}</Text>
                 
             </View>
             <ScrollView style={{backgroundColor: 'white'}} >
@@ -66,7 +126,7 @@
             
             <TouchableOpacity style={{ height: 90, justifyContent:'flex-start', padding: 20,
             borderBottomColor:'gray', borderBottomWidth: 2, alignContent: 'center',flexDirection:'row'}}
-            onPress={() => this.props.navigation.navigate('AppSettings')}
+            onPress={() => this.props.navigation.navigate('AppSettings', {id: this.state.userId, token: this.state.userToken})}
             >
             <Image source={require('../images/Settings.png')} style={{justifyContent:'center', alignContent: 'center'}} />
             <Text
@@ -95,36 +155,9 @@
                 }}>Add New Events</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={{ height: 90, justifyContent:'flex-start', padding: 20,
-            borderBottomColor:'gray', borderBottomWidth: 2, alignContent: 'center',flexDirection:'row'}}
-            onPress={() => this.props.navigation.navigate('MyFriends')}>
-            <Image source={require('../images/MyFriends.png')} style={{justifyContent:'center', alignContent: 'center'}} />
-            <Text
-                  style={{
-                  fontSize: 25,
-                  justifyContent:'center',
-                  textAlign: 'left',
-                  fontWeight:'bold',
-                  marginLeft:10,
-                  color: '#ff6666'
-                }}>My Friends</Text>
-            </TouchableOpacity>
+            
 
-            <TouchableOpacity style={{ height: 90, justifyContent:'flex-start', padding: 20,
-            borderBottomColor:'gray', borderBottomWidth: 2, alignContent: 'center',flexDirection:'row'}}
-            onPress={() => this.props.navigation.navigate('AddFriends')}
-            >
-            <Image source={require('../images/AddFriends.png')} style={{justifyContent:'center', alignContent: 'center'}} />
-            <Text
-                  style={{
-                  fontSize: 25,
-                  justifyContent:'center',
-                  textAlign: 'left',
-                  fontWeight:'bold',
-                  marginLeft:10,
-                  color: '#ff6666'
-                }}>Add Friends</Text>
-            </TouchableOpacity>
+            
 
             <TouchableOpacity style={{ height: 90, justifyContent:'center',
             borderBottomColor:'gray', borderBottomWidth: 2, alignContent: 'center'}}
