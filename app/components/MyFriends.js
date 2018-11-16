@@ -1,25 +1,28 @@
 import React, {Component} from 'react';
 import {AppRegistry,Platform,KeyboardAvoidingView, StyleSheet, Text, View, ImageBackground,
     Image,TouchableOpacity,ListView,ScrollView,
-    Button, TextInput,Alert,TouchableHighlight,Slider,ActivityIndicator} from 'react-native';
+    Button, TextInput,Alert,TouchableHighlight,Slider,ActivityIndicator, RefreshControl} from 'react-native';
 import {createStackNavigator,NavigationActions,StackActions} from 'react-navigation'
 import { Dropdown } from 'react-native-material-dropdown';
+import { EventRegister } from 'react-native-event-listeners'
 
 export default class MyFriends extends Component {
   constructor(props) {
     super(props);
     const dataObjects = [ 
-      { eventId: 1,
+      { eventId: 0,
         event:
-        { eventName: 'Cineplex',
-        eventLocation: '15460 Bayview Avenue Aurora, ON, L4G 7J1',
-        eventDescription: 'Watch a movie together!' } 
+        { eventName: 'Place Holder',
+        eventLocation: 'Place Holder',
+        eventDescription: 'Place Holder' } 
       } 
     ]
     const rowHasChanged = (r1, r2) => r1 !== r2
     const ds = new ListView.DataSource({rowHasChanged})
     this.state = {
+      isListEmpty: true,
       isLoading: true,
+      refreshing: false,
       dataSource: ds.cloneWithRows(dataObjects),
       userId:"",
       token:""
@@ -42,9 +45,16 @@ showMore(event){
 }
 
 componentWillMount(){
+  this.fetchData();
+}
+
+fetchData(){
   const { navigation } = this.props;
   const id = navigation.getParam('id');
   const tk = navigation.getParam('token');
+
+  // refreshing the event page
+  EventRegister.emit('myCustomEvent',{});
 
   console.log(tk)
   console.log(id)
@@ -64,8 +74,14 @@ componentWillMount(){
       this.setState({
         
       }, function(){
-        this.dataObjects = responseJson;
-        console.log(responseJson);
+        if(!(responseJson.isEmpty)){
+          this.state.isListEmpty = false;
+       
+          this.dataObjects = responseJson;
+          this.setState({dataSource:ds.cloneWithRows(responseJson)});
+          console.log(this.dataObjects);
+        }
+        
         
         this.setState({isLoading:false});
       });
@@ -86,6 +102,12 @@ componentWillMount(){
       fontWeight: 'bold',
     },
   };
+  onRefresh() {
+
+    console.log("refresh");
+    this.fetchData();
+  
+  }
 
 
   render() {
@@ -94,6 +116,16 @@ componentWillMount(){
       return (
         <View style={{ flex: 1, padding: 20 }}>
           <ActivityIndicator />
+        </View>
+      );
+    }
+
+    if (this.state.isListEmpty) {
+      return (
+        <View style={{ flex: 1, textAlign:"center", justifyContent:"center", flexDirection:"row"}}>
+          <Text style={{ fontSize: '25', fontSize: 18, color: 'black', width:200, textAlign:"center",justifyContent:"center"}}>
+            You did not joined any event. Plese use the main page to joine events.
+          </Text>
         </View>
       );
     }
@@ -109,6 +141,13 @@ componentWillMount(){
                     <Text style={{alignItems:"flex-start",justifyContent:"flex-start", fontSize:20, padding: 10, fontWeight:"bold", color:"black"}}>
                     {rowData.event.eventName} - {rowData.event.eventDescription}</Text>
                     </TouchableOpacity>
+                }
+
+                refreshControl={
+                  <RefreshControl
+                    refreshing={this.state.refreshing}
+                    onRefresh={this.onRefresh.bind(this)}
+                  />
                 }
               />
         </ImageBackground>
